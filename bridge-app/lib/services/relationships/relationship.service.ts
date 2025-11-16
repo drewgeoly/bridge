@@ -234,5 +234,98 @@ export class RelationshipService {
 
     return data as Relationship
   }
+
+  /**
+   * Find person by email or name (enhanced search for contacts)
+   */
+  async findPersonByEmailOrName(
+    email?: string,
+    name?: string
+  ): Promise<Person | null> {
+    const supabase = await createClient()
+
+    // Try email first
+    if (email) {
+      const { data: personByEmail, error: emailError } = await supabase
+        .from('people')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .single()
+
+      if (personByEmail && !emailError) {
+        return personByEmail as Person
+      }
+    }
+
+    // Try name
+    if (name) {
+      const normalizedName = name.trim()
+      const { data: peopleByName, error: nameError } = await supabase
+        .from('people')
+        .select('*')
+        .ilike('name', normalizedName)
+        .limit(1)
+
+      if (peopleByName && peopleByName.length > 0 && !nameError) {
+        return peopleByName[0] as Person
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * Update person with contact data
+   */
+  async updatePersonWithContact(personId: string, contact: any): Promise<Person> {
+    const supabase = await createClient()
+
+    // Get current person
+    const { data: currentPerson, error: getError } = await supabase
+      .from('people')
+      .select('*')
+      .eq('id', personId)
+      .single()
+
+    if (getError || !currentPerson) {
+      throw new Error(`Person not found: ${personId}`)
+    }
+
+    const updates: any = {}
+
+    // Update phone numbers if provided
+    if (contact.phones && contact.phones.length > 0) {
+      const currentPhones = (currentPerson.phone_numbers as string[]) || []
+      updates.phone_numbers = Array.from(new Set([...currentPhones, ...contact.phones]))
+    }
+
+    // Update contact source
+    if (!currentPerson.contact_source) {
+      updates.contact_source = 'vcf_upload'
+    }
+
+    // Update last contact sync
+    updates.last_contact_sync = new Date().toISOString()
+
+    // Update metadata
+    const currentMetadata = currentPerson.metadata || {}
+    updates.metadata = {
+      ...currentMetadata,
+      lastContactSync: new Date().toISOString(),
+    }
+
+    const { data: updatedPerson, error: updateError } = await supabase
+      .from('people')
+      .update(updates)
+      .eq('id', personId)
+      .select()
+      .single()
+
+    if (updateError) {
+      throw new Error(`Failed to update person: ${updateError.message}`)
+    }
+
+    return updatedPerson as Person
+  }
 }
 

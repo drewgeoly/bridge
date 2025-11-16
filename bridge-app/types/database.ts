@@ -24,6 +24,9 @@ export interface Person {
   name?: string
   aliases?: string[]
   merged_emails?: string[]
+  phone_numbers?: string[]
+  contact_source?: string
+  last_contact_sync?: Date
   metadata?: Record<string, any>
   created_at: Date
 }

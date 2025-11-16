@@ -25,6 +25,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "supabase": "^2.58.5",
+    "vcard-parser": "^1.0.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

@@ -127,7 +127,8 @@ export class TouchpointRepository {
     if (updates.title !== undefined) updateData.title = updates.title
     if (updates.data !== undefined) updateData.data = updates.data
     if (updates.durationMinutes !== undefined) updateData.duration_minutes = updates.durationMinutes
-    if (updates.occurredAt !== undefined) updateData.occurred_at = updates.occurredAt.toISOString()
+    if (updates.occurredAt !== undefined) updateData.occurred_at = updates.occurredAt ? updates.occurredAt.toISOString() : null
+    if (updates.rawEventData !== undefined) updateData.raw_event_data = updates.rawEventData
 
     const { data, error } = await supabase
       .from('touchpoints')
