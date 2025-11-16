@@ -15,6 +15,15 @@ export interface LLMProvider {
   ): Promise<string>
 
   /**
+   * Generate a streaming completion/response from the LLM
+   */
+  generateCompletionStream?(
+    prompt: string,
+    context?: Record<string, any>,
+    options?: LLMCompletionOptions
+  ): Promise<ReadableStream<string>>
+
+  /**
    * Generate embeddings for text (for semantic search, clustering, etc.)
    */
   generateEmbedding?(text: string): Promise<number[]>
