@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ConnectionLoggerService } from '../connection-logger.service'
 import { RelationshipService } from '../../relationships/relationship.service'
 import { TouchpointRepository } from '@/lib/repositories/touchpoint.repository'
+import type { TouchpointInput } from '@/types/calendar'
 
 // Mock dependencies
 vi.mock('../../relationships/relationship.service')
@@ -127,7 +128,7 @@ describe('ConnectionLoggerService', () => {
 
         const result = await service.logConnection(userId, input)
 
-        expect(result.touchpoint.data.method).toBe(method)
+        expect(result.touchpoint.data?.method).toBe(method)
       }
     })
 
@@ -157,7 +158,7 @@ describe('ConnectionLoggerService', () => {
 
       const result = await service.logConnection(userId, input)
 
-      expect(result.touchpoint.data.method).toBe('in-person')
+      expect(result.touchpoint.data?.method).toBe('in-person')
     })
 
     it('should handle connection without description', async () => {
@@ -185,7 +186,7 @@ describe('ConnectionLoggerService', () => {
 
       const result = await service.logConnection(userId, input)
 
-      expect(result.touchpoint.data.description).toBeUndefined()
+      expect(result.touchpoint.data?.description).toBeUndefined()
     })
 
     it('should handle connection without occurredAt (stores null)', async () => {
@@ -206,7 +207,7 @@ describe('ConnectionLoggerService', () => {
         person_id: 'person-1',
       })
 
-      mockTouchpointRepository.createTouchpoint.mockImplementation((touchpointInput) => {
+      mockTouchpointRepository.createTouchpoint.mockImplementation((touchpointInput: TouchpointInput) => {
         // Verify occurredAt is null
         expect(touchpointInput.occurredAt).toBeNull()
 
@@ -239,7 +240,7 @@ describe('ConnectionLoggerService', () => {
         person_id: 'person-1',
       })
 
-      mockTouchpointRepository.createTouchpoint.mockImplementation((touchpointInput) => {
+      mockTouchpointRepository.createTouchpoint.mockImplementation((touchpointInput: TouchpointInput) => {
         // Verify occurredAt is null
         expect(touchpointInput.occurredAt).toBeNull()
 

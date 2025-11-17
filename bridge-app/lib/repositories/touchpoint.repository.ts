@@ -3,7 +3,8 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import type { Touchpoint, TouchpointInput } from '@/types/database'
+import type { Touchpoint } from '@/types/database'
+import type { TouchpointInput } from '@/types/calendar'
 
 export class TouchpointRepository {
   /**

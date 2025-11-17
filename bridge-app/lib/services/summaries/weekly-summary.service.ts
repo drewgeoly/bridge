@@ -84,15 +84,16 @@ export class WeeklySummaryService {
 
     try {
       // Use AgentService with 'summary' agent type
-      const response = await this.agentService.getAdvice(userId, {
-        agentName: 'summary',
-        message: prompt,
-        contextOptions: {
+      const response = await this.agentService.getAdvice(
+        userId,
+        prompt,
+        'summary',
+        {
           includeRelationships: false, // We're providing our own context
           includeTouchpoints: false,
-          includeConversations: false,
-        },
-      })
+          includePastConversations: false,
+        }
+      )
 
       return response.response
     } catch (error: any) {

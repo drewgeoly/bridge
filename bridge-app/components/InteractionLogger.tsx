@@ -135,7 +135,7 @@ export function InteractionLogger({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-200 via-blue-100 to-amber-100">
+    <div className="min-h-screen">
       {/* Navigation */}
       <nav className="border-b border-white/30 bg-white/20 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
@@ -204,7 +204,7 @@ export function InteractionLogger({
                     <Calendar
                       mode="single"
                       selected={date}
-                      onSelect={(selectedDate) => {
+                      onSelect={(selectedDate: Date | undefined) => {
                         if (selectedDate) {
                           setDate(selectedDate)
                           setDateOpen(false)

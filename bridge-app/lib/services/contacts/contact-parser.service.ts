@@ -30,7 +30,7 @@ export class ContactParserService {
       const cards = vcard.parse(content)
       const contacts: Contact[] = []
 
-      for (const card of cards) {
+      for (const card of Object.values(cards)) {
         const contact = this.parseVCard(card)
         if (contact) {
           contacts.push(contact)

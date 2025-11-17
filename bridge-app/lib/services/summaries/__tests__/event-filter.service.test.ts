@@ -21,6 +21,7 @@ describe('EventFilterService', () => {
         type: 'calendar',
         source: 'google_calendar',
         occurred_at: new Date(),
+        created_at: new Date(),
         title: 'Coffee with Friend',
         raw_event_data: {
           attendees: [
@@ -39,6 +40,7 @@ describe('EventFilterService', () => {
         type: 'calendar',
         source: 'google_calendar',
         occurred_at: new Date(),
+        created_at: new Date(),
         title: 'Quick Chat',
         duration_minutes: 10,
         raw_event_data: {
@@ -59,6 +61,7 @@ describe('EventFilterService', () => {
         type: 'calendar',
         source: 'google_calendar',
         occurred_at: new Date(),
+        created_at: new Date(),
         title: 'Standup Meeting',
         duration_minutes: 30,
         raw_event_data: {
@@ -79,6 +82,7 @@ describe('EventFilterService', () => {
         type: 'calendar',
         source: 'work_calendar',
         occurred_at: new Date(),
+        created_at: new Date(),
         title: 'Team Lunch',
         duration_minutes: 60,
         raw_event_data: {
@@ -99,6 +103,7 @@ describe('EventFilterService', () => {
         type: 'calendar',
         source: 'google_calendar',
         occurred_at: new Date(),
+        created_at: new Date(),
         title: 'Coffee with Sarah',
         duration_minutes: 60,
         raw_event_data: {
@@ -119,6 +124,7 @@ describe('EventFilterService', () => {
         type: 'calendar',
         source: 'google_calendar',
         occurred_at: new Date(),
+        created_at: new Date(),
         title: 'Meeting',
         duration_minutes: 30,
         raw_event_data: {
@@ -142,6 +148,7 @@ describe('EventFilterService', () => {
           type: 'calendar',
           source: 'work_calendar',
           occurred_at: new Date(),
+          created_at: new Date(),
         } as Touchpoint,
       ]
 
@@ -156,6 +163,7 @@ describe('EventFilterService', () => {
           type: 'calendar',
           source: 'university_calendar',
           occurred_at: new Date(),
+          created_at: new Date(),
         } as Touchpoint,
       ]
 
@@ -170,6 +178,7 @@ describe('EventFilterService', () => {
           type: 'calendar',
           source: 'google_calendar',
           occurred_at: new Date(),
+          created_at: new Date(),
           title: 'Dinner with Mom',
         } as Touchpoint,
       ]
@@ -185,6 +194,7 @@ describe('EventFilterService', () => {
           type: 'calendar',
           source: 'google_calendar',
           occurred_at: new Date(),
+          created_at: new Date(),
           title: 'Coffee with Friend',
         } as Touchpoint,
       ]

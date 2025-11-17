@@ -5,6 +5,9 @@
 import { createClient } from '@/lib/supabase/client'
 import { API_ENDPOINTS } from './endpoints'
 
+// Re-export for convenience
+export { API_ENDPOINTS }
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -39,9 +42,9 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const token = await getAuthToken()
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   }
 
   if (token) {
@@ -72,7 +75,9 @@ export async function apiFetch<T>(
   const data = await response.json()
 
   if (!response.ok) {
-    const errorMessage = (data as ApiError).error || `Request failed with status ${response.status}`
+    const errorMessage = (data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') 
+      ? data.error 
+      : `Request failed with status ${response.status}`
     throw new ApiError(errorMessage, response.status, data)
   }
 

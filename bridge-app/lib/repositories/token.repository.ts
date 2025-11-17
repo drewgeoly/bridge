@@ -3,7 +3,8 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import type { ExternalAccount, TokenData } from '@/types/database'
+import type { ExternalAccount } from '@/types/database'
+import type { TokenData } from '@/types/calendar'
 
 export class TokenRepository {
   /**

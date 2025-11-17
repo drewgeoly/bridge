@@ -3,7 +3,9 @@
 import { useRelationships } from "@/lib/hooks/use-relationships"
 import { useTouchpoints } from "@/lib/hooks/use-touchpoints"
 import { useCalendarStatus } from "@/lib/hooks/use-calendar-status"
-import { apiGet, API_ENDPOINTS } from "@/lib/api/client"
+import { useProfile } from "@/lib/hooks/use-profile"
+import { apiGet } from "@/lib/api/client"
+import { API_ENDPOINTS } from "@/lib/api/endpoints"
 import type { CalendarStatusResponse } from "@/lib/api/types"
 import { Contact, Interaction } from "@/types/frontend"
 import { Button } from "./ui/button"
@@ -38,6 +40,7 @@ export function HomePage({
   const router = useRouter()
   
   // Fetch data
+  const { data: profile } = useProfile()
   const { data: relationshipsData, isLoading: relationshipsLoading } = useRelationships({ limit: 100 })
   const { data: touchpointsData, isLoading: touchpointsLoading } = useTouchpoints({ limit: 100 })
   const { data: calendarStatus } = useQuery({
@@ -46,6 +49,9 @@ export function HomePage({
       return apiGet<CalendarStatusResponse>(API_ENDPOINTS.calendarStatus)
     },
   })
+
+  // Extract user name for greeting
+  const userName = profile?.full_name || profile?.email?.split('@')[0] || 'there'
 
   // Transform data to match component expectations
   const contacts: Contact[] = (relationshipsData?.relationships || []).map((rel) => ({
@@ -105,7 +111,7 @@ export function HomePage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-200 via-blue-100 to-amber-100">
+    <div className="min-h-screen">
       {/* Navigation */}
       <nav className="border-b border-white/30 bg-white/20 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
@@ -154,7 +160,7 @@ export function HomePage({
               fontStyle: "italic",
             }}
           >
-            Hi there!
+            Hi {userName}!
           </h2>
           <p className="text-xl text-slate-600">
             Week of {formatDate(weekStart)} -{" "}

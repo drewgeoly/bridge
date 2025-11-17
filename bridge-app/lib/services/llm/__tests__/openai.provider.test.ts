@@ -4,7 +4,7 @@
  * Run with: npm test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { OpenAIProvider } from '../openai.provider'
 import OpenAI from 'openai'
 

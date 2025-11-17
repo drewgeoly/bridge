@@ -9,7 +9,7 @@ import { ContactRepository } from '@/lib/repositories/contact.repository'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -22,7 +22,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const importId = params.id
+    const { id } = await params
+    const importId = id
 
     const contactRepository = new ContactRepository()
     const importRecord = await contactRepository.getContactImportById(importId, user.id)

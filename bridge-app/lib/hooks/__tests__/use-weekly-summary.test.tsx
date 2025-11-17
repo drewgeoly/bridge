@@ -120,7 +120,7 @@ describe('useWeeklySummary', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(result.current.data).toEqual(mockData)
-    expect(result.current.data.narrative).toBeDefined()
+    expect(result.current.data?.narrative).toBeDefined()
     expect(apiGet).toHaveBeenCalledWith(
       expect.stringContaining('includeNarrative=true')
     )

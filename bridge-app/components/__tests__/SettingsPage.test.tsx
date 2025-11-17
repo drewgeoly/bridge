@@ -113,7 +113,7 @@ describe('SettingsPage', () => {
   it('should allow connecting calendar when not connected', async () => {
     const originalLocation = window.location
     delete (window as any).location
-    window.location = { ...originalLocation, href: '' }
+    ;(window as any).location = { ...originalLocation, href: '' } as Location
 
     ;(useCalendarStatus as any).mockReturnValue({
       data: {
@@ -146,7 +146,7 @@ describe('SettingsPage', () => {
 
     expect(window.location.href).toBe('/api/calendar/connect')
 
-    window.location = originalLocation
+    ;(window as any).location = originalLocation
   })
 
   it('should load existing preferences', async () => {

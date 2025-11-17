@@ -162,11 +162,17 @@ describe('DeduplicationService', () => {
           error: null,
         }),
       }
-      // Make it thenable
-      updateChain.then = (resolve: any) => {
-        return Promise.resolve(updateChain.single()).then(resolve)
+      // Make it thenable - return a proper Promise
+      const thenableChain = {
+        ...updateChain,
+        then: (resolve: any) => {
+          return Promise.resolve(updateChain.single()).then(resolve)
+        },
+        catch: (reject: any) => {
+          return Promise.resolve(updateChain.single()).catch(reject)
+        },
       }
-      mockSupabase.update.mockReturnValue(updateChain)
+      mockSupabase.update.mockReturnValue(thenableChain as any)
 
       const result = await service.mergeContactIntoPerson(personId, contact as any)
 
