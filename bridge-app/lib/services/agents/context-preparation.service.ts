@@ -53,23 +53,29 @@ export class ContextPreparationService {
 
     // Get touchpoints
     if (includeTouchpoints) {
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - touchpointDaysBack)
+      try {
+        const endDate = new Date()
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() - touchpointDaysBack)
 
-      if (options?.relationshipId) {
-        // Get touchpoints for specific relationship
-        context.touchpoints = await this.touchpointRepository.findByRelationshipId(
-          options.relationshipId,
-          userId
-        )
-      } else {
-        // Get recent touchpoints
-        context.touchpoints = await this.touchpointRepository.findByDateRange(
-          userId,
-          startDate,
-          endDate
-        )
+        if (options?.relationshipId) {
+          // Get touchpoints for specific relationship
+          context.touchpoints = await this.touchpointRepository.findByRelationshipId(
+            options.relationshipId,
+            userId
+          )
+        } else {
+          // Get recent touchpoints
+          context.touchpoints = await this.touchpointRepository.findByDateRange(
+            userId,
+            startDate,
+            endDate
+          )
+        }
+      } catch (error) {
+        // Return empty array on error
+        console.error('Error fetching touchpoints:', error)
+        context.touchpoints = []
       }
     }
 
@@ -104,23 +110,31 @@ export class ContextPreparationService {
    * Get active relationships for a user
    */
   private async getActiveRelationships(userId: string): Promise<any[]> {
-    const supabase = await createClient()
+    try {
+      const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('relationships')
-      .select(`
-        *,
-        people (*)
-      `)
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .order('last_interaction', { ascending: false })
+      const { data, error } = await supabase
+        .from('relationships')
+        .select(`
+          *,
+          people (*)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('last_interaction', { ascending: false })
 
-    if (error) {
-      throw new Error(`Failed to get relationships: ${error.message}`)
+      if (error) {
+        // Log error but return empty array instead of throwing
+        console.error('Error fetching relationships:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      // Return empty array on any error
+      console.error('Exception fetching relationships:', error)
+      return []
     }
-
-    return data || []
   }
 
   /**
@@ -130,23 +144,31 @@ export class ContextPreparationService {
     userId: string,
     relationshipId: string
   ): Promise<any[]> {
-    const supabase = await createClient()
+    try {
+      const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('relationships')
-      .select(`
-        *,
-        people (*)
-      `)
-      .eq('id', relationshipId)
-      .eq('user_id', userId)
-      .single()
+      const { data, error } = await supabase
+        .from('relationships')
+        .select(`
+          *,
+          people (*)
+        `)
+        .eq('id', relationshipId)
+        .eq('user_id', userId)
+        .single()
 
-    if (error) {
-      throw new Error(`Failed to get relationship: ${error.message}`)
+      if (error) {
+        // Log error but return empty array instead of throwing
+        console.error('Error fetching relationship:', error)
+        return []
+      }
+
+      return data ? [data] : []
+    } catch (error) {
+      // Return empty array on any error
+      console.error('Exception fetching relationship:', error)
+      return []
     }
-
-    return data ? [data] : []
   }
 }
 

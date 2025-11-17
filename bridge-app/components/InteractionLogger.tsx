@@ -311,19 +311,19 @@ export function InteractionLogger({
                 />
               </div>
 
+              {/* Success Message */}
+              {showSuccess && (
+                <div className="flex items-center gap-2 p-4 bg-white/60 backdrop-blur-sm border border-white/50 rounded-lg text-slate-700">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Connection logged successfully!</span>
+                </div>
+              )}
+
               {/* Error Message */}
               {error && (
                 <div className="flex items-center gap-2 p-4 bg-red-50 backdrop-blur-sm border border-red-200 rounded-lg text-red-700">
                   <AlertCircle className="w-5 h-5" />
                   <span>{error}</span>
-                </div>
-              )}
-
-              {/* Success Message */}
-              {showSuccess && (
-                <div className="flex items-center gap-2 p-4 bg-green-50 backdrop-blur-sm border border-green-200 rounded-lg text-green-700">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span>Connection logged successfully!</span>
                 </div>
               )}
 

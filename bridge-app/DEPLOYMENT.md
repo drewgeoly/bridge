@@ -117,19 +117,48 @@ Make sure all required environment variables are set in Vercel:
 3. Add/update the following variables:
 
 **Required Variables:**
+
+| Variable | Description | Where Used | Required For |
+|----------|-------------|------------|--------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | All Supabase client/server code | Core functionality (auth, database) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | All Supabase client/server code | Core functionality (auth, database) |
+| `GOOGLE_CALENDAR_CLIENT_ID` | Google OAuth Client ID | Calendar sync service | Calendar integration |
+| `GOOGLE_CALENDAR_CLIENT_SECRET` | Google OAuth Client Secret | Calendar sync service | Calendar integration |
+| `GOOGLE_CALENDAR_REDIRECT_URI` | OAuth callback URL | Calendar OAuth flow | Calendar integration |
+| `GEMINI_API_KEY` | Google Gemini API key for LLM features | Agent service, suggestions API | AI features (required for personalized suggestions) |
+| `GEMINI_MODEL` | Gemini model name (e.g., gemini-pro) | Agent service | AI features (defaults to gemini-pro) |
+
+**Variable Details:**
+
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 GOOGLE_CALENDAR_CLIENT_ID=your_google_client_id
 GOOGLE_CALENDAR_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALENDAR_REDIRECT_URI=https://your-domain.vercel.app/api/calendar/callback
-OPENAI_API_KEY=your_openai_api_key
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-pro
 ```
 
 **Important Notes:**
+- `NEXT_PUBLIC_*` variables are exposed to the browser - never put secrets here
 - Update `GOOGLE_CALENDAR_REDIRECT_URI` to match your Vercel deployment URL
+- `GEMINI_API_KEY` is required for AI features - if missing, AI suggestions will return generic fallbacks
+- `GEMINI_MODEL` defaults to `gemini-pro` if not specified
 - Make sure to add these for **Production**, **Preview**, and **Development** environments
 - After adding variables, you may need to redeploy for them to take effect
+
+**How to Get Gemini API Keys:**
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey) or [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** → **Credentials**
+3. Click **Create Credentials** → **API Key**
+4. Copy the API key and add it as `GEMINI_API_KEY` in Vercel
+5. For `GEMINI_MODEL`, use `gemini-pro` (default) or `gemini-1.5-pro` for newer models
+
+**What Happens If Variables Are Missing:**
+- Missing Supabase variables: App won't work (auth/database required)
+- Missing Google Calendar variables: Calendar sync won't work, but app functions otherwise
+- Missing Gemini key: AI suggestions will return generic fallbacks instead of personalized ones
 
 ### Step 4: Update Google OAuth Redirect URI
 

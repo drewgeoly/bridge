@@ -7,12 +7,16 @@ import { HomePage } from './HomePage'
 import { InteractionLogger } from './InteractionLogger'
 import { AdvicePage } from './AdvicePage'
 import { SettingsPage } from './SettingsPage'
+import { LoginPage } from './LoginPage'
+import { apiGet, API_ENDPOINTS } from '@/lib/api/client'
+import type { GetProfileResponse } from '@/lib/api/types'
 
 type Page = 'home' | 'logger' | 'advice' | 'settings'
 
 export function AppRouter() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [isCheckingNewUser, setIsCheckingNewUser] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -21,12 +25,34 @@ export function AppRouter() {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {
-        // Redirect to login if not authenticated
-        router.push('/api/auth/login')
+        setIsAuthenticated(false)
         return
       }
       
       setIsAuthenticated(true)
+      setIsCheckingNewUser(true)
+
+      // Check if user is new (no preferences set)
+      try {
+        const profile = await apiGet<GetProfileResponse>(API_ENDPOINTS.profile)
+        const hasPreferences = profile?.preferences && 
+          Object.keys(profile.preferences).length > 0 &&
+          (profile.preferences.usageFrequency || profile.preferences.advicePreference)
+        
+        if (!hasPreferences) {
+          // New user - send to settings
+          setCurrentPage('settings')
+        } else {
+          // Existing user - send to home
+          setCurrentPage('home')
+        }
+      } catch (error) {
+        // If profile fetch fails, assume new user
+        console.error('Error checking profile:', error)
+        setCurrentPage('settings')
+      } finally {
+        setIsCheckingNewUser(false)
+      }
     }
 
     checkAuth()
@@ -36,8 +62,12 @@ export function AppRouter() {
     setCurrentPage(page)
   }
 
-  // Show nothing while checking auth
-  if (isAuthenticated === null) {
+  const handleLogin = () => {
+    window.location.href = '/api/auth/login'
+  }
+
+  // Show loading while checking auth
+  if (isAuthenticated === null || (isAuthenticated && isCheckingNewUser)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-sky-200 via-blue-100 to-amber-100 flex items-center justify-center">
         <div className="text-slate-600">Loading...</div>
@@ -45,9 +75,9 @@ export function AppRouter() {
     )
   }
 
-  // Don't render if not authenticated (redirect is happening)
+  // Show login page if not authenticated
   if (!isAuthenticated) {
-    return null
+    return <LoginPage onLogin={handleLogin} />
   }
 
   return (

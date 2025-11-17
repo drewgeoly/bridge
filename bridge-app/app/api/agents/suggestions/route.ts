@@ -30,7 +30,40 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '3', 10)
 
-    // Get personalized suggestions using the agent
+    // Check if user has any data before calling LLM
+    const { ContextPreparationService } = await import('@/lib/services/agents/context-preparation.service')
+    const contextService = new ContextPreparationService()
+    
+    let hasData = false
+    try {
+      const context = await contextService.prepareContext(user.id, {
+        includeRelationships: true,
+        includeTouchpoints: true,
+        includePastConversations: false,
+      })
+      hasData = Boolean(
+        (context.relationships && context.relationships.length > 0) ||
+        (context.touchpoints && context.touchpoints.length > 0)
+      )
+    } catch (error) {
+      // If context preparation fails, assume no data
+      console.error('Error preparing context:', error)
+      hasData = false
+    }
+
+    // If no data exists, return generic suggestions immediately
+    if (!hasData) {
+      const genericSuggestions: Suggestion[] = [
+        { icon: 'message', action: 'Send a thoughtful text to someone', contactName: '' },
+        { icon: 'calendar', action: 'Schedule a lunch date', contactName: '' },
+        { icon: 'coffee', action: 'Grab coffee with a friend', contactName: '' },
+      ]
+      return NextResponse.json({
+        suggestions: genericSuggestions.slice(0, limit),
+      })
+    }
+
+    // Get personalized suggestions using the agent (only if we have data)
     const agentService = new AgentService()
     
     // Build a prompt for getting suggestions
@@ -129,11 +162,22 @@ export async function GET(request: Request) {
       })
     }
   } catch (error: any) {
+    // Always return suggestions, never a 500 error
     console.error('Error getting suggestions:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to get suggestions' },
-      { status: 500 }
-    )
+    
+    // Parse limit from request if available, default to 3
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '3', 10)
+    
+    const genericSuggestions: Suggestion[] = [
+      { icon: 'message', action: 'Send a thoughtful text to someone', contactName: '' },
+      { icon: 'calendar', action: 'Schedule a lunch date', contactName: '' },
+      { icon: 'coffee', action: 'Grab coffee with a friend', contactName: '' },
+    ]
+
+    return NextResponse.json({
+      suggestions: genericSuggestions.slice(0, limit),
+    })
   }
 }
 

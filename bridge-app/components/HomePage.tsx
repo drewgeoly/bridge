@@ -232,7 +232,7 @@ export function HomePage({
               </div>
             </div>
 
-            {/* Weekly Summary */}
+            {/* Recent Activity */}
             <div>
               <h3
                 className="text-3xl text-slate-800 mb-6"
@@ -241,12 +241,21 @@ export function HomePage({
                   fontStyle: "italic",
                 }}
               >
-                Weekly Summary
+                Daily Digest
               </h3>
 
-              <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-lg border border-white/50">
-                <SummaryView showWeeklySummary={true} />
-              </div>
+              <button 
+                onClick={handleCalendarConnect}
+                className="w-full bg-white/40 backdrop-blur-md rounded-3xl p-12 shadow-lg border border-white/50 hover:bg-white/50 transition-all group"
+              >
+                <Calendar className="w-16 h-16 mx-auto mb-4 text-sky-400 group-hover:scale-110 transition-transform" />
+                <div className="text-slate-700 text-xl mb-2">
+                  Link your calendar
+                </div>
+                <div className="text-slate-500">
+                  Connect your calendar to sync events
+                </div>
+              </button>
             </div>
           </div>
 

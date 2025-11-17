@@ -2,7 +2,7 @@
  * Service for orchestrating agent execution
  */
 
-import { OpenAIProvider } from '../llm/openai.provider'
+import { GeminiProvider } from '../llm/gemini.provider'
 import { ContextPreparationService } from './context-preparation.service'
 import { AgentConversationRepository } from '@/lib/repositories/agent-conversation.repository'
 import type { LLMProvider } from '../llm/llm-provider.interface'
@@ -18,7 +18,7 @@ export class AgentService {
   private conversationRepository: AgentConversationRepository
 
   constructor() {
-    this.llmProvider = new OpenAIProvider()
+    this.llmProvider = new GeminiProvider()
     this.contextService = new ContextPreparationService()
     this.conversationRepository = new AgentConversationRepository()
   }
