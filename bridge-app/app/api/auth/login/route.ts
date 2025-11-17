@@ -5,10 +5,14 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const supabase = await createClient()
 
+  // Use stable domain if available, otherwise use request origin
+  const stableDomain = 'https://assignment-3-olive-eight.vercel.app'
+  const redirectTo = process.env.NEXT_PUBLIC_APP_URL || stableDomain || requestUrl.origin
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${requestUrl.origin}/api/auth/callback`,
+      redirectTo: `${redirectTo}/api/auth/callback`,
     },
   })
 

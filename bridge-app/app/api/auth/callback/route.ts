@@ -10,5 +10,9 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(new URL('/', requestUrl.origin))
+  // Use stable domain if available, otherwise use request origin
+  const stableDomain = 'https://assignment-3-olive-eight.vercel.app'
+  const redirectTo = process.env.NEXT_PUBLIC_APP_URL || stableDomain || requestUrl.origin
+
+  return NextResponse.redirect(new URL('/', redirectTo))
 }

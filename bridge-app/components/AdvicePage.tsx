@@ -324,7 +324,9 @@ export function AdvicePage({
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Ask for advice or suggestions..."
               disabled={isStreaming}
-              className="flex-1 bg-white/60 backdrop-blur-sm border border-white/50 rounded-full px-6 py-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-transparent disabled:opacity-50"
+              readOnly={isStreaming}
+              autoFocus
+              className="flex-1 bg-white/60 backdrop-blur-sm border border-white/50 rounded-full px-6 py-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               type="submit"

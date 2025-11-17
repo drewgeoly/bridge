@@ -52,16 +52,15 @@ export class GoogleCalendarService {
       'https://www.googleapis.com/auth/calendar.readonly',
     ]
 
-    // Determine redirect URI - use request origin if provided, otherwise use env var
+    // Determine redirect URI - prefer env var (stable domain), fallback to request origin
     let redirectUri = this.baseRedirectUri
-    if (requestOrigin && !redirectUri) {
+    if (!redirectUri && requestOrigin) {
       redirectUri = `${requestOrigin}/api/calendar/callback`
     }
 
     if (!redirectUri) {
       throw new Error(
-        'Redirect URI not configured. Either set GOOGLE_CALENDAR_REDIRECT_URI environment variable ' +
-        'or provide requestOrigin parameter.'
+        'Redirect URI not configured. Set GOOGLE_CALENDAR_REDIRECT_URI environment variable.'
       )
     }
 
@@ -118,9 +117,9 @@ export class GoogleCalendarService {
     refreshToken?: string
     expiresAt?: Date
   }> {
-    // Determine redirect URI - use request origin if provided, otherwise use env var
+    // Determine redirect URI - prefer env var (stable domain), fallback to request origin
     let redirectUri = this.baseRedirectUri
-    if (requestOrigin && !redirectUri) {
+    if (!redirectUri && requestOrigin) {
       redirectUri = `${requestOrigin}/api/calendar/callback`
     }
 
