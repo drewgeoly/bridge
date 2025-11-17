@@ -160,15 +160,20 @@ GEMINI_MODEL=gemini-pro
 - Missing Google Calendar variables: Calendar sync won't work, but app functions otherwise
 - Missing Gemini key: AI suggestions will return generic fallbacks instead of personalized ones
 
-### Step 4: Update Google OAuth Redirect URI
+### Step 4: Set Up Google Calendar OAuth
 
+See [GOOGLE_CALENDAR_SETUP.md](./GOOGLE_CALENDAR_SETUP.md) for detailed instructions.
+
+**Quick Steps:**
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Navigate to **APIs & Services** → **Credentials**
-3. Find your OAuth 2.0 Client ID
-4. Add your Vercel production URL to **Authorized redirect URIs**:
-   ```
-   https://your-domain.vercel.app/api/calendar/callback
-   ```
+2. Enable **Google Calendar API**
+3. Create **OAuth 2.0 Client ID** (Web application type)
+4. Add redirect URI: `https://your-domain.vercel.app/api/calendar/callback`
+5. Copy **Client ID** and **Client Secret**
+6. Add to Vercel environment variables:
+   - `GOOGLE_CALENDAR_CLIENT_ID`
+   - `GOOGLE_CALENDAR_CLIENT_SECRET`
+   - `GOOGLE_CALENDAR_REDIRECT_URI` (your callback URL)
 
 ## 📝 Deployment Checklist
 

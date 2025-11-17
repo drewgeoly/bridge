@@ -6,12 +6,12 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { AgentService } from '../agent.service'
-import { OpenAIProvider } from '../../llm/openai.provider'
+import { GeminiProvider } from '../../llm/gemini.provider'
 import { ContextPreparationService } from '../context-preparation.service'
 import { AgentConversationRepository } from '@/lib/repositories/agent-conversation.repository'
 
 // Mock dependencies
-vi.mock('../../llm/openai.provider')
+vi.mock('../../llm/gemini.provider')
 vi.mock('../context-preparation.service')
 vi.mock('@/lib/repositories/agent-conversation.repository')
 
@@ -40,7 +40,7 @@ describe('AgentService', () => {
     }
 
     // Create constructor classes
-    class MockOpenAIProvider {
+    class MockGeminiProvider {
       constructor() {
         return mockLLMProvider
       }
@@ -58,7 +58,7 @@ describe('AgentService', () => {
       }
     }
 
-    ;(OpenAIProvider as any).mockImplementation(MockOpenAIProvider)
+    ;(GeminiProvider as any).mockImplementation(MockGeminiProvider)
     ;(ContextPreparationService as any).mockImplementation(MockContextPreparationService)
     ;(AgentConversationRepository as any).mockImplementation(MockAgentConversationRepository)
 

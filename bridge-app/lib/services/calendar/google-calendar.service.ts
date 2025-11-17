@@ -9,42 +9,133 @@ import { parseGoogleAPIDate, calculateDurationMinutes } from '@/lib/utils/date.u
 
 export class GoogleCalendarService {
   private tokenRepository: TokenRepository
-  private oauth2Client: any
+  private clientId: string
+  private clientSecret: string
+  private baseRedirectUri: string
 
   constructor() {
     this.tokenRepository = new TokenRepository()
-    this.oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CALENDAR_CLIENT_ID,
-      process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
-      process.env.GOOGLE_CALENDAR_REDIRECT_URI
-    )
+    
+    const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID?.trim()
+    const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET?.trim()
+    const redirectUri = process.env.GOOGLE_CALENDAR_REDIRECT_URI?.trim()
+
+    if (!clientId || !clientSecret) {
+      const missing = []
+      if (!clientId) missing.push('GOOGLE_CALENDAR_CLIENT_ID')
+      if (!clientSecret) missing.push('GOOGLE_CALENDAR_CLIENT_SECRET')
+      
+      console.error('Missing Google Calendar env vars:', {
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret,
+      })
+      
+      throw new Error(
+        `Missing required Google Calendar environment variables: ${missing.join(', ')}. ` +
+        `Please set these in your Vercel environment variables and redeploy.`
+      )
+    }
+
+    this.clientId = clientId
+    this.clientSecret = clientSecret
+    // Use redirect URI from env if set, otherwise we'll construct it from request origin
+    this.baseRedirectUri = redirectUri || ''
   }
 
   /**
    * Get OAuth2 authorization URL
+   * @param state Optional state parameter
+   * @param requestOrigin Optional origin from request (for dynamic redirect URI)
    */
-  getAuthUrl(state?: string): string {
+  getAuthUrl(state?: string, requestOrigin?: string): string {
     const scopes = [
       'https://www.googleapis.com/auth/calendar.readonly',
     ]
 
-    return this.oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: scopes,
-      prompt: 'consent', // Force consent to get refresh token
-      state,
-    })
+    // Determine redirect URI - use request origin if provided, otherwise use env var
+    let redirectUri = this.baseRedirectUri
+    if (requestOrigin && !redirectUri) {
+      redirectUri = `${requestOrigin}/api/calendar/callback`
+    }
+
+    if (!redirectUri) {
+      throw new Error(
+        'Redirect URI not configured. Either set GOOGLE_CALENDAR_REDIRECT_URI environment variable ' +
+        'or provide requestOrigin parameter.'
+      )
+    }
+
+    // Create OAuth2 client with current redirect URI
+    const oauth2Client = new google.auth.OAuth2(
+      this.clientId,
+      this.clientSecret,
+      redirectUri
+    )
+
+    try {
+      const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: scopes,
+        prompt: 'consent', // Force consent to get refresh token
+        state,
+      })
+
+      // Verify the URL contains client_id
+      if (!authUrl.includes('client_id=')) {
+        console.error('OAuth URL missing client_id:', {
+          hasClientId: !!this.clientId,
+          redirectUri: redirectUri,
+          authUrl: authUrl.substring(0, 100)
+        })
+        throw new Error('Generated OAuth URL is missing client_id. Check GOOGLE_CALENDAR_CLIENT_ID environment variable.')
+      }
+
+      // Log for debugging
+      console.log('OAuth URL generated successfully:', {
+        hasClientId: authUrl.includes('client_id='),
+        hasRedirectUri: authUrl.includes('redirect_uri='),
+        redirectUri: redirectUri,
+        urlLength: authUrl.length
+      })
+
+      return authUrl
+    } catch (error: any) {
+      console.error('Error generating OAuth URL:', {
+        error: error.message,
+        clientIdSet: !!this.clientId,
+        clientSecretSet: !!this.clientSecret,
+        redirectUri: redirectUri
+      })
+      throw error
+    }
   }
 
   /**
    * Exchange authorization code for tokens
    */
-  async exchangeCodeForTokens(code: string): Promise<{
+  async exchangeCodeForTokens(code: string, requestOrigin?: string): Promise<{
     accessToken: string
     refreshToken?: string
     expiresAt?: Date
   }> {
-    const { tokens } = await this.oauth2Client.getToken(code)
+    // Determine redirect URI - use request origin if provided, otherwise use env var
+    let redirectUri = this.baseRedirectUri
+    if (requestOrigin && !redirectUri) {
+      redirectUri = `${requestOrigin}/api/calendar/callback`
+    }
+
+    if (!redirectUri) {
+      throw new Error('Redirect URI not configured for token exchange')
+    }
+
+    // Create OAuth2 client with current redirect URI
+    const oauth2Client = new google.auth.OAuth2(
+      this.clientId,
+      this.clientSecret,
+      redirectUri
+    )
+
+    const { tokens } = await oauth2Client.getToken(code)
 
     if (!tokens.access_token) {
       throw new Error('No access token received from Google')
@@ -56,7 +147,7 @@ export class GoogleCalendarService {
 
     return {
       accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
+      refreshToken: tokens.refresh_token || undefined,
       expiresAt,
     }
   }
@@ -71,11 +162,18 @@ export class GoogleCalendarService {
       throw new Error('No refresh token available')
     }
 
-    this.oauth2Client.setCredentials({
+    // Create OAuth2 client for refresh (redirect URI not needed for refresh)
+    const oauth2Client = new google.auth.OAuth2(
+      this.clientId,
+      this.clientSecret,
+      this.baseRedirectUri || 'http://localhost:3000/api/calendar/callback' // Dummy URI for refresh
+    )
+
+    oauth2Client.setCredentials({
       refresh_token: account.refresh_token,
     })
 
-    const { credentials } = await this.oauth2Client.refreshAccessToken()
+    const { credentials } = await oauth2Client.refreshAccessToken()
 
     if (!credentials.access_token) {
       throw new Error('Failed to refresh access token')
@@ -119,11 +217,18 @@ export class GoogleCalendarService {
     timeMin: Date,
     timeMax: Date
   ): Promise<GoogleCalendarEvent[]> {
-    this.oauth2Client.setCredentials({
+    // Create OAuth2 client for API calls (redirect URI not needed)
+    const oauth2Client = new google.auth.OAuth2(
+      this.clientId,
+      this.clientSecret,
+      this.baseRedirectUri || 'http://localhost:3000/api/calendar/callback' // Dummy URI for API calls
+    )
+
+    oauth2Client.setCredentials({
       access_token: accessToken,
     })
 
-    const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client })
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
     try {
       const response = await calendar.events.list({

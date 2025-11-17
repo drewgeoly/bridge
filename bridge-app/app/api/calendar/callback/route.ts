@@ -47,9 +47,10 @@ export async function GET(request: Request) {
       )
     }
 
-    // Exchange code for tokens
+    // Exchange code for tokens (use request origin to match the redirect URI used in OAuth)
     const googleCalendarService = new GoogleCalendarService()
-    const tokens = await googleCalendarService.exchangeCodeForTokens(code)
+    const requestOrigin = requestUrl.origin
+    const tokens = await googleCalendarService.exchangeCodeForTokens(code, requestOrigin)
 
     // Save tokens to database
     const tokenRepository = new TokenRepository()

@@ -47,7 +47,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 GOOGLE_CALENDAR_CLIENT_ID=your_google_client_id
 GOOGLE_CALENDAR_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALENDAR_REDIRECT_URI=https://your-domain.vercel.app/api/calendar/callback
-OPENAI_API_KEY=your_openai_api_key
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-pro
 ```
 
 ### 4. Update Google OAuth Redirect URI

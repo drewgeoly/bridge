@@ -111,6 +111,14 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error getting advice:', error)
 
+    // Handle missing API key (Gemini)
+    if (error.message?.includes('GEMINI_API_KEY') || error.message?.includes('environment variable is required')) {
+      return NextResponse.json(
+        { error: 'GEMINI_API_KEY environment variable is required. Please set it in Vercel environment variables and redeploy.' },
+        { status: 500 }
+      )
+    }
+
     // Handle rate limiting
     if (error.message?.includes('Rate limit exceeded')) {
       return NextResponse.json(
