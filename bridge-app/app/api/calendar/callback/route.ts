@@ -47,18 +47,24 @@ export async function GET(request: Request) {
       )
     }
 
-    // Exchange code for tokens (use request origin to match the redirect URI used in OAuth)
+    // Exchange code for tokens (use stable domain to match the redirect URI used in OAuth)
     const googleCalendarService = new GoogleCalendarService()
-    const requestOrigin = requestUrl.origin
-    const tokens = await googleCalendarService.exchangeCodeForTokens(code, requestOrigin)
+    const stableDomain = 'https://assignment-3-olive-eight.vercel.app'
+    const redirectDomain = process.env.GOOGLE_CALENDAR_REDIRECT_URI 
+      ? new URL(process.env.GOOGLE_CALENDAR_REDIRECT_URI).origin
+      : stableDomain
+    const tokens = await googleCalendarService.exchangeCodeForTokens(code, redirectDomain)
 
     // Save tokens to database
     const tokenRepository = new TokenRepository()
     await tokenRepository.saveTokens(user.id, 'google_calendar', tokens)
 
-    // Redirect to dashboard with success
+    // Redirect to dashboard with success (use stable domain)
+    const stableDomain = 'https://assignment-3-olive-eight.vercel.app'
+    const redirectTo = process.env.NEXT_PUBLIC_APP_URL || stableDomain || requestUrl.origin
     return NextResponse.redirect(
-      new URL('/?calendar_connected=true', requestUrl.origin)
+      new URL('/?calendar_connected=true', redirectTo),
+      { status: 302 }
     )
   } catch (error: any) {
     console.error('Error handling calendar callback:', error)

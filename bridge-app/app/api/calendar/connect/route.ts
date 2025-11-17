@@ -30,18 +30,20 @@ export async function GET(request: NextRequest) {
     try {
       googleCalendarService = new GoogleCalendarService()
       
-      // Use request origin for redirect URI (handles dynamic Vercel URLs)
-      const requestUrl = new URL(request.url)
-      const requestOrigin = requestUrl.origin
+      // Use stable domain from env var, fallback to request origin
+      const stableDomain = 'https://assignment-3-olive-eight.vercel.app'
+      const redirectDomain = process.env.GOOGLE_CALENDAR_REDIRECT_URI 
+        ? new URL(process.env.GOOGLE_CALENDAR_REDIRECT_URI).origin
+        : stableDomain
       
-      authUrl = googleCalendarService.getAuthUrl(user.id, requestOrigin)
+      authUrl = googleCalendarService.getAuthUrl(user.id, redirectDomain)
       
       // Log for debugging
       console.log('Generated OAuth URL:', {
         hasClientId: !!process.env.GOOGLE_CALENDAR_CLIENT_ID,
         hasClientSecret: !!process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
-        requestOrigin: requestOrigin,
-        redirectUri: `${requestOrigin}/api/calendar/callback`,
+        redirectDomain: redirectDomain,
+        redirectUri: process.env.GOOGLE_CALENDAR_REDIRECT_URI || `${redirectDomain}/api/calendar/callback`,
         authUrlLength: authUrl.length
       })
     } catch (error: any) {
@@ -52,8 +54,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Redirect to Google OAuth
-    return NextResponse.redirect(authUrl)
+    // Redirect to Google OAuth (use 302 for external redirects)
+    return NextResponse.redirect(authUrl, { status: 302 })
   } catch (error: any) {
     console.error('Error initiating calendar connection:', error)
     const requestUrl = new URL(request.url)
