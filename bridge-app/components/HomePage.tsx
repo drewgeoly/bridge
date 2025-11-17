@@ -67,7 +67,16 @@ export function HomePage({
     method: tp.title || tp.type,
     description: tp.data?.description as string | undefined,
     date: tp.occurred_at ? new Date(tp.occurred_at) : new Date(tp.created_at),
+    source: tp.source,
   }))
+
+  // Filter calendar events for Daily Digest (events from google_calendar source)
+  const calendarEvents = interactions
+    .filter(i => i.source === 'google_calendar')
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 5) // Show last 5 events
+
+  const isCalendarConnected = calendarStatus?.connected || false
 
   const isLoading = relationshipsLoading || touchpointsLoading
 
@@ -244,18 +253,58 @@ export function HomePage({
                 Daily Digest
               </h3>
 
-              <button 
-                onClick={handleCalendarConnect}
-                className="w-full bg-white/40 backdrop-blur-md rounded-3xl p-12 shadow-lg border border-white/50 hover:bg-white/50 transition-all group"
-              >
-                <Calendar className="w-16 h-16 mx-auto mb-4 text-sky-400 group-hover:scale-110 transition-transform" />
-                <div className="text-slate-700 text-xl mb-2">
-                  Link your calendar
+              {isCalendarConnected && calendarEvents.length > 0 ? (
+                <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-lg border border-white/50">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Calendar className="w-6 h-6 text-sky-400" />
+                    <h4 className="text-xl text-slate-800 font-semibold">Recent Calendar Events</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {calendarEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/50"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="text-slate-800 font-medium mb-1">
+                              {event.contactName !== 'Unknown' ? event.contactName : event.method}
+                            </div>
+                            {event.description && (
+                              <div className="text-slate-600 text-sm mb-2">
+                                {event.description}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-slate-500 text-sm ml-4">
+                            {formatDate(event.date)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {calendarEvents.length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      No calendar events yet. Events will appear here after syncing.
+                    </div>
+                  )}
                 </div>
-                <div className="text-slate-500">
-                  Connect your calendar to sync events
-                </div>
-              </button>
+              ) : (
+                <button 
+                  onClick={handleCalendarConnect}
+                  className="w-full bg-white/40 backdrop-blur-md rounded-3xl p-12 shadow-lg border border-white/50 hover:bg-white/50 transition-all group"
+                >
+                  <Calendar className="w-16 h-16 mx-auto mb-4 text-sky-400 group-hover:scale-110 transition-transform" />
+                  <div className="text-slate-700 text-xl mb-2">
+                    {isCalendarConnected ? 'Sync your calendar' : 'Link your calendar'}
+                  </div>
+                  <div className="text-slate-500">
+                    {isCalendarConnected 
+                      ? 'Click to sync recent calendar events'
+                      : 'Connect your calendar to sync events'}
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 

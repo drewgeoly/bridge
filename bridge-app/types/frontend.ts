@@ -15,5 +15,6 @@ export interface Interaction {
   method: string
   description?: string
   date: Date
+  source?: string
 }
 

@@ -41,10 +41,6 @@ export async function PUT(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw new Error(`Failed to fetch profile: ${fetchError.message}`)
-    }
-
     // Merge preferences
     const currentPreferences = currentProfile?.preferences || {}
     const updatedPreferences = {
@@ -52,22 +48,44 @@ export async function PUT(request: Request) {
       ...body,
     }
 
-    // Update or create profile
-    const { data: updatedProfile, error: updateError } = await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        email: user.email || currentProfile?.email || '',
-        preferences: updatedPreferences,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'id',
-      })
-      .select()
-      .single()
+    let updatedProfile
 
-    if (updateError) {
-      throw new Error(`Failed to update preferences: ${updateError.message}`)
+    if (fetchError && fetchError.code === 'PGRST116') {
+      // Profile doesn't exist, create it
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email || '',
+          preferences: updatedPreferences,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        throw new Error(`Failed to create profile: ${insertError.message}`)
+      }
+      updatedProfile = newProfile
+    } else if (fetchError) {
+      throw new Error(`Failed to fetch profile: ${fetchError.message}`)
+    } else {
+      // Profile exists, update it
+      const { data: updated, error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          preferences: updatedPreferences,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        throw new Error(`Failed to update preferences: ${updateError.message}`)
+      }
+      updatedProfile = updated
     }
 
     const response: UpdatePreferencesResponse = {
