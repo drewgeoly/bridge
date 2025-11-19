@@ -81,6 +81,70 @@ export class ContactParserService {
     // Extract organization
     const organization = card.org?.[0]?.value || card.org || undefined
 
+    // Extract job title
+    const jobTitle = card.title?.[0]?.value || card.title || undefined
+
+    // Extract addresses
+    const addresses: Array<{ type: 'home' | 'work' | 'other'; value: string }> = []
+    if (card.adr) {
+      for (const adrEntry of Array.isArray(card.adr) ? card.adr : [card.adr]) {
+        const adr = adrEntry.value || adrEntry
+        if (Array.isArray(adr) && adr.length >= 7) {
+          // vCard address format: [PO Box, Extended Address, Street, Locality, Region, Postal Code, Country]
+          const parts = adr.filter(Boolean)
+          if (parts.length > 0) {
+            const addressValue = parts.join(', ')
+            const type = (adrEntry.type || '').toLowerCase().includes('work') ? 'work' :
+                         (adrEntry.type || '').toLowerCase().includes('home') ? 'home' : 'other'
+            addresses.push({ type, value: addressValue })
+          }
+        }
+      }
+    }
+
+    // Extract URLs
+    const urls: Array<{ type: string; value: string }> = []
+    if (card.url) {
+      for (const urlEntry of Array.isArray(card.url) ? card.url : [card.url]) {
+        const url = urlEntry.value || urlEntry
+        if (url && typeof url === 'string') {
+          const type = urlEntry.type || 'homepage'
+          urls.push({ type, value: url })
+        }
+      }
+    }
+
+    // Extract birthday
+    let birthday: Date | undefined
+    if (card.bday) {
+      const bdayValue = card.bday?.[0]?.value || card.bday
+      if (bdayValue) {
+        try {
+          // Try parsing as ISO date or various formats
+          const parsed = new Date(bdayValue)
+          if (!isNaN(parsed.getTime())) {
+            birthday = parsed
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+      }
+    }
+
+    // Extract photo
+    let photo: string | undefined
+    if (card.photo) {
+      const photoValue = card.photo?.[0]?.value || card.photo
+      if (photoValue) {
+        if (typeof photoValue === 'string') {
+          // Could be a URL or base64 data
+          photo = photoValue
+        } else if (photoValue.uri) {
+          photo = photoValue.uri
+        }
+      }
+    }
+
     // Skip if no identifying information
     if (!name && emails.length === 0 && phones.length === 0) {
       return null
@@ -94,6 +158,11 @@ export class ContactParserService {
       phones: phones.filter(Boolean),
       notes,
       organization,
+      jobTitle,
+      addresses: addresses.length > 0 ? addresses : undefined,
+      urls: urls.length > 0 ? urls : undefined,
+      birthday,
+      photo,
       rawData: card,
     }
   }

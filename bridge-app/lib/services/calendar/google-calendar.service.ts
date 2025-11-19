@@ -249,6 +249,56 @@ export class GoogleCalendarService {
   }
 
   /**
+   * Filter out Google Calendar boilerplate text from descriptions
+   */
+  private filterGoogleBoilerplate(description?: string): string | undefined {
+    if (!description) return undefined
+
+    let cleaned = description
+
+    // Remove Google Calendar boilerplate patterns
+    const boilerplatePatterns = [
+      /To see detailed information.*/gi,
+      /g\.co\/calendar.*/gi,
+      /mail\.google\.com.*/gi,
+      /https?:\/\/[^\s]+/g, // Remove all URLs
+      /View this event in Google Calendar.*/gi,
+      /Add to Google Calendar.*/gi,
+      /See more details.*/gi,
+    ]
+
+    // Apply all patterns
+    for (const pattern of boilerplatePatterns) {
+      cleaned = cleaned.replace(pattern, '')
+    }
+
+    // Remove common Google Calendar instruction text
+    const instructionText = [
+      'To see detailed information',
+      'View this event',
+      'Add to calendar',
+      'See more',
+      'Click here',
+    ]
+
+    for (const text of instructionText) {
+      const regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+      cleaned = cleaned.replace(regex, '')
+    }
+
+    // Clean up extra whitespace and newlines
+    cleaned = cleaned
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('\n')
+      .trim()
+
+    // Return undefined if only boilerplate remains
+    return cleaned.length > 0 ? cleaned : undefined
+  }
+
+  /**
    * Transform Google Calendar event to our touchpoint format
    */
   transformEventToTouchpointData(event: GoogleCalendarEvent): {
@@ -272,17 +322,50 @@ export class GoogleCalendarService {
       ? calculateDurationMinutes(startTime, endTime)
       : undefined
 
+    // Filter boilerplate from description
+    const cleanedDescription = this.filterGoogleBoilerplate(event.description)
+
+    // Process attendees into people array
+    const people: Array<{ name: string; email?: string }> = []
+    if (event.attendees && Array.isArray(event.attendees)) {
+      for (const attendee of event.attendees) {
+        // Skip the organizer if they're also in attendees
+        if (attendee.email === event.organizer?.email) {
+          continue
+        }
+        
+        const name = attendee.displayName || attendee.email || 'Unknown'
+        const email = attendee.email
+        
+        // Avoid duplicates
+        if (!people.some(p => p.email === email || (p.name === name && !email))) {
+          people.push({ name, email })
+        }
+      }
+    }
+
+    // Add organizer as a person if not already included
+    if (event.organizer) {
+      const organizerName = event.organizer.displayName || event.organizer.email || 'Unknown'
+      const organizerEmail = event.organizer.email
+      
+      if (!people.some(p => p.email === organizerEmail || (p.name === organizerName && !organizerEmail))) {
+        people.unshift({ name: organizerName, email: organizerEmail })
+      }
+    }
+
     return {
       title: event.summary || 'Untitled Event',
       occurredAt: startTime,
       durationMinutes,
       data: {
-        description: event.description,
+        description: cleanedDescription,
         location: event.location,
         status: event.status,
         htmlLink: event.htmlLink,
         organizer: event.organizer,
         attendees: event.attendees,
+        people: people.length > 0 ? people : undefined,
       },
     }
   }

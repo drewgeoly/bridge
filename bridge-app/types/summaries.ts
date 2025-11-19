@@ -52,6 +52,7 @@ export interface WeeklyInsights {
     weak: number
   }
   patterns: string[] // Array of pattern descriptions
+  shortInsights?: string[] // Short, snappy insights
 }
 
 /**

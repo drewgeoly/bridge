@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '3', 10)
+    const limit = parseInt(searchParams.get('limit') || '15', 10) // Default to 15 for caching
 
     // Check if user has any data before calling LLM
     const { ContextPreparationService } = await import('@/lib/services/agents/context-preparation.service')

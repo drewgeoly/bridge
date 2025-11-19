@@ -53,32 +53,48 @@ describe('PUT /api/profile/preferences', () => {
       updated_at: new Date().toISOString(),
     }
 
-    mockSupabase.from.mockReturnValue({
+    // Mock the select chain (for checking if profile exists)
+    const selectChain = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({
         data: mockCurrentProfile,
         error: null,
       }),
-      upsert: vi.fn().mockReturnThis(),
-    })
+    }
 
-    const selectChain = mockSupabase.from('profiles').select().eq('id', mockUser.id).single()
-    const upsertChain = mockSupabase.from('profiles').upsert({
-      id: mockUser.id,
-      email: mockUser.email,
-      preferences: {
-        existing: 'value',
-        usageFrequency: 'daily',
-        advicePreference: 'practical',
-      },
-      updated_at: expect.any(String),
-    }, { onConflict: 'id' })
+    // Mock the update chain
+    const updateChain = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: mockUpdatedProfile,
+        error: null,
+      }),
+    }
 
-    upsertChain.select = vi.fn().mockReturnThis()
-    upsertChain.single = vi.fn().mockResolvedValue({
-      data: mockUpdatedProfile,
-      error: null,
+    // Mock from() to return appropriate chain based on method called
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        // First call is select, subsequent calls are update
+        let callCount = 0
+        return {
+          select: vi.fn().mockReturnValue(selectChain),
+          update: vi.fn().mockReturnValue(updateChain),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: mockCurrentProfile,
+            error: null,
+          }),
+        }
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }
     })
 
     const request = new NextRequest('http://localhost/api/profile/preferences', {
@@ -101,16 +117,6 @@ describe('PUT /api/profile/preferences', () => {
   })
 
   it('should create profile if it does not exist', async () => {
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({
-        data: null,
-        error: { code: 'PGRST116' }, // No rows found
-      }),
-      upsert: vi.fn().mockReturnThis(),
-    })
-
     const mockNewProfile = {
       id: 'user-1',
       email: 'user@example.com',
@@ -121,19 +127,45 @@ describe('PUT /api/profile/preferences', () => {
       updated_at: new Date().toISOString(),
     }
 
-    const upsertChain = mockSupabase.from('profiles').upsert({
-      id: mockUser.id,
-      email: mockUser.email,
-      preferences: {
-        usageFrequency: 'weekly',
-      },
-      updated_at: expect.any(String),
-    }, { onConflict: 'id' })
+    // Mock the select chain (returns error indicating profile doesn't exist)
+    const selectChain = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: 'PGRST116' }, // No rows found
+      }),
+    }
 
-    upsertChain.select = vi.fn().mockReturnThis()
-    upsertChain.single = vi.fn().mockResolvedValue({
-      data: mockNewProfile,
-      error: null,
+    // Mock the insert chain
+    const insertChain = {
+      insert: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: mockNewProfile,
+        error: null,
+      }),
+    }
+
+    // Mock from() to return appropriate chain
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue(selectChain),
+          insert: vi.fn().mockReturnValue(insertChain),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: 'PGRST116' },
+          }),
+        }
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }
     })
 
     const request = new NextRequest('http://localhost/api/profile/preferences', {

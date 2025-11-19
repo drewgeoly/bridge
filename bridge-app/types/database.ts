@@ -59,6 +59,7 @@ export interface Touchpoint {
   occurred_at: Date
   duration_minutes?: number
   title?: string
+  category?: 'social' | 'work' | 'personal' | 'family' | 'other' | null
   data?: Record<string, any>
   external_id?: string
   raw_event_data?: Record<string, any>

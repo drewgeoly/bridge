@@ -50,6 +50,8 @@ describe('GET /api/summaries/weekly', () => {
         totalMeetings: 5,
         totalTimeMinutes: 300,
         uniquePeopleCount: 3,
+        averageMeetingDurationMinutes: 60,
+        categoryBreakdown: {},
       },
       relationships: [],
       insights: {
@@ -58,6 +60,7 @@ describe('GET /api/summaries/weekly', () => {
         relationshipHealth: { strong: 2, moderate: 1, weak: 0 },
         patterns: [],
       },
+      narrative: undefined,
       generatedAt: new Date(),
     }
 

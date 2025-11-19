@@ -97,7 +97,7 @@ describe('AgentService', () => {
       const userId = 'user-123'
       const message = 'Test message'
 
-      mockConversationRepository.getUserRequestCount.mockResolvedValue(25) // Exceeds limit
+      mockConversationRepository.getUserRequestCount.mockResolvedValue(51) // Exceeds limit (50)
 
       await expect(service.getAdvice(userId, message)).rejects.toThrow(
         'Rate limit exceeded'
@@ -242,7 +242,7 @@ describe('AgentService', () => {
       const userId = 'user-123'
       const message = 'Test message'
 
-      mockConversationRepository.getUserRequestCount.mockResolvedValue(25)
+      mockConversationRepository.getUserRequestCount.mockResolvedValue(51) // Exceeds limit (50)
 
       await expect(service.getAdviceStream(userId, message)).rejects.toThrow(
         'Rate limit exceeded'

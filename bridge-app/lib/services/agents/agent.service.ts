@@ -8,8 +8,8 @@ import { AgentConversationRepository } from '@/lib/repositories/agent-conversati
 import type { LLMProvider } from '../llm/llm-provider.interface'
 import type { AgentName, ContextOptions, ExtractedInsight } from '@/types/agents'
 
-// Rate limiting configuration
-const RATE_LIMIT_REQUESTS_PER_HOUR = 20
+// Rate limiting configuration - increased limits
+const RATE_LIMIT_REQUESTS_PER_HOUR = 50 // Increased from 20
 const RATE_LIMIT_WINDOW_MINUTES = 60
 
 export class AgentService {
@@ -37,7 +37,16 @@ export class AgentService {
     await this.checkRateLimit(userId)
 
     // Prepare context
-    const context = await this.contextService.prepareContext(userId, contextOptions)
+    const preparedContext = await this.contextService.prepareContext(userId, contextOptions)
+    
+    // Merge conversation metadata from contextOptions into context
+    const context = {
+      ...preparedContext,
+      intent: contextOptions?.intent,
+      friend: contextOptions?.friend,
+      activity: contextOptions?.activity,
+      userTextHistory: contextOptions?.userTextHistory || [],
+    }
 
     // Build prompt
     const systemPrompt = this.buildSystemPrompt(agentName, context)
@@ -96,24 +105,37 @@ export class AgentService {
             if (!conversationStored) {
               conversationStored = true
               try {
+                // Enhance context snapshot with conversation metadata
+                const enhancedContext = {
+                  ...context,
+                  conversationMetadata: {
+                    intent: context.intent,
+                    friend: context.friend,
+                    activity: context.activity,
+                    userTextHistory: context.userTextHistory || [message],
+                  },
+                }
+                
                 const conversation = await conversationRepository.createConversation({
                   userId,
                   agentName,
                   message,
                   response: fullResponse,
-                  contextSnapshot: context,
+                  contextSnapshot: enhancedContext,
                   metadata: {
-                    model: 'gpt-4',
+                    model: 'gemini',
                     streamed: true,
                   },
                 })
 
-                // Extract insights asynchronously (don't block)
-                extractInsights(userId, conversation.id, fullResponse, context).catch(
-                  (error) => {
-                    console.error('Failed to extract insights:', error)
-                  }
-                )
+                // Extract insights asynchronously (don't block) - only if conversation was created
+                if (conversation?.id) {
+                  extractInsights(userId, conversation.id, fullResponse, context).catch(
+                    (error) => {
+                      console.error('Failed to extract insights:', error)
+                    }
+                  )
+                }
               } catch (error) {
                 console.error('Failed to store conversation:', error)
               }
@@ -150,7 +172,16 @@ export class AgentService {
     await this.checkRateLimit(userId)
 
     // Prepare context
-    const context = await this.contextService.prepareContext(userId, contextOptions)
+    const preparedContext = await this.contextService.prepareContext(userId, contextOptions)
+    
+    // Merge conversation metadata from contextOptions into context
+    const context = {
+      ...preparedContext,
+      intent: contextOptions?.intent,
+      friend: contextOptions?.friend,
+      activity: contextOptions?.activity,
+      userTextHistory: contextOptions?.userTextHistory || [],
+    }
 
     // Build prompt
     const systemPrompt = this.buildSystemPrompt(agentName, context)
@@ -163,15 +194,26 @@ export class AgentService {
       temperature: 0.7,
     })
 
+    // Enhance context snapshot with conversation metadata
+    const enhancedContext = {
+      ...context,
+      conversationMetadata: {
+        intent: context.intent,
+        friend: context.friend,
+        activity: context.activity,
+        userTextHistory: context.userTextHistory || [message],
+      },
+    }
+    
     // Store conversation
     const conversation = await this.conversationRepository.createConversation({
       userId,
       agentName,
       message,
       response,
-      contextSnapshot: context,
+      contextSnapshot: enhancedContext,
       metadata: {
-        model: 'gpt-4',
+        model: 'gemini',
       },
     })
 
@@ -239,7 +281,42 @@ Return only valid JSON array, no other text. Example format:
    * Build system prompt based on agent name and context
    */
   private buildSystemPrompt(agentName: AgentName, context: any): string {
-    const basePrompt = `You are a helpful relationship advisor. You help users understand and improve their relationships based on their calendar events, interactions, and relationship history.`
+    // Build natural context description
+    let contextDescription = ''
+    if (context.friend?.name) {
+      contextDescription += `The user is asking about ${context.friend.name}. `
+    }
+    if (context.intent === 'make_plans' && context.activity) {
+      const activityMap: Record<string, string> = {
+        'get_food': 'getting food',
+        'grab_coffee': 'grabbing coffee',
+        'watch_movie': 'watching a movie',
+        'play_games': 'playing games',
+        'listen_music': 'listening to music',
+        'hang_out': 'hanging out',
+      }
+      const activityLabel = activityMap[context.activity] || context.activity.replace(/_/g, ' ')
+      contextDescription += `They want to ${activityLabel} together. `
+    }
+
+    const basePrompt = `You are a warm, helpful relationship advisor. Give practical, actionable advice in a friendly, conversational tone. Be specific and helpful.
+
+${contextDescription ? `Context: ${contextDescription}` : ''}
+
+IMPORTANT: Your response must start with valid JSON in this exact format (no other text before it):
+{
+  "advice": "Your advice here - be specific, actionable, and warm. 1-2 sentences.",
+  "recommendations": [
+    {"type": "draft_message"},
+    {"type": "suggest_places"},
+    {"type": "suggest_times"},
+    {"type": "more_advice"}
+  ]
+}
+
+After the JSON, you can add a brief explanation if needed. The "advice" field should be natural, conversational advice - NOT a description of what you're doing or system instructions. Write as if talking directly to the user.
+
+Available recommendation types: draft_message, suggest_places, suggest_times, more_advice. Include 2-4 relevant ones.`
 
     if (context.focusedRelationship) {
       return `${basePrompt} The user is asking about a specific relationship. Focus your advice on that relationship and its history.`

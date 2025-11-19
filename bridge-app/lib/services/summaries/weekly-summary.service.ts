@@ -33,21 +33,91 @@ export class WeeklySummaryService {
       endDate
     )
 
-    // Generate narrative if requested
-    let narrative: string | undefined
-    if (input.includeNarrative) {
-      narrative = await this.generateNarrative(userId, stats, relationships, insights)
-    }
+    // Generate short insights instead of long narrative
+    const shortInsights = this.generateShortInsights(stats, relationships, insights)
 
     return {
       weekStart: startDate,
       weekEnd: endDate,
       stats,
       relationships,
-      insights,
-      narrative,
+      insights: {
+        ...insights,
+        shortInsights, // Add short insights to insights object
+      },
+      narrative: undefined, // No longer using narrative
       generatedAt: new Date(),
     }
+  }
+
+  /**
+   * Generate short, snappy insights
+   */
+  private generateShortInsights(
+    stats: any,
+    relationships: any[],
+    insights: any
+  ): string[] {
+    const insightsList: string[] = []
+
+    // Interaction count insights
+    if (stats.totalMeetings > 0) {
+      const friendInteractions = relationships.filter(r => r.category === 'friend').reduce((sum, r) => sum + r.interactionCount, 0)
+      if (friendInteractions > 0) {
+        insightsList.push(`You had ${friendInteractions} interaction${friendInteractions !== 1 ? 's' : ''} with friends this week`)
+      }
+
+      // Meal-related insights
+      const mealKeywords = ['lunch', 'dinner', 'breakfast', 'brunch', 'coffee', 'food', 'meal', 'eat']
+      const mealInteractions = relationships.filter(r => {
+        const hasMealKeyword = r.meetingTypes && Object.keys(r.meetingTypes).some(type => 
+          mealKeywords.some(keyword => type.toLowerCase().includes(keyword))
+        )
+        return hasMealKeyword && r.interactionCount > 0
+      })
+      
+      if (mealInteractions.length > 0) {
+        const totalMeals = mealInteractions.reduce((sum, r) => {
+          const mealCount = Object.entries(r.meetingTypes || {}).reduce((s, [type, count]) => {
+            return mealKeywords.some(kw => type.toLowerCase().includes(kw)) ? s + (count as number) : s
+          }, 0)
+          return sum + mealCount
+        }, 0)
+        if (totalMeals > 0) {
+          insightsList.push(`You ate ${totalMeals} meal${totalMeals !== 1 ? 's' : ''} with friends this week`)
+        }
+      }
+
+      // Time spent insights
+      const hoursSpent = Math.round(stats.totalTimeMinutes / 60)
+      if (hoursSpent > 0) {
+        insightsList.push(`You spent ${hoursSpent} hour${hoursSpent !== 1 ? 's' : ''} this week connecting with people`)
+      }
+
+      // Specific activity insights
+      const topRelationship = relationships.sort((a, b) => b.totalTimeMinutes - a.totalTimeMinutes)[0]
+      if (topRelationship && topRelationship.interactionCount > 0) {
+        const personName = topRelationship.personName || 'a friend'
+        // Try to find a specific activity
+        const activities = Object.entries(topRelationship.meetingTypes || {})
+          .filter(([type]) => !['calendar', 'call', 'message'].includes(type.toLowerCase()))
+          .map(([type]) => type)
+        
+        if (activities.length > 0) {
+          const activity = activities[0].replace(/_/g, ' ')
+          insightsList.push(`You ${activity} with ${personName} this week`)
+        } else if (topRelationship.interactionCount > 1) {
+          insightsList.push(`You connected ${topRelationship.interactionCount} times with ${personName} this week`)
+        }
+      }
+
+      // People count
+      if (stats.uniquePeopleCount > 0) {
+        insightsList.push(`You connected with ${stats.uniquePeopleCount} ${stats.uniquePeopleCount === 1 ? 'person' : 'people'} this week`)
+      }
+    }
+
+    return insightsList.slice(0, 5) // Limit to 5 insights
   }
 
   /**

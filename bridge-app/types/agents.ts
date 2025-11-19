@@ -18,6 +18,11 @@ export interface ContextOptions {
   includePastConversations?: boolean
   touchpointDaysBack?: number
   conversationLimit?: number
+  // Conversation metadata from frontend
+  intent?: string
+  friend?: { id?: string; name: string }
+  activity?: string
+  userTextHistory?: string[]
 }
 
 /**

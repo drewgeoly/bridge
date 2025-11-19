@@ -225,7 +225,7 @@ describe('POST /api/agents/advice', () => {
     })
 
     mockAgentService.getAdvice.mockRejectedValue(
-      new Error('Rate limit exceeded. Maximum 20 requests per hour.')
+      new Error('Rate limit exceeded. Maximum 50 requests per hour.')
     )
 
     const request = new Request('http://localhost/api/agents/advice', {

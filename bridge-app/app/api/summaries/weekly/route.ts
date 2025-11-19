@@ -66,7 +66,31 @@ export async function GET(request: NextRequest) {
       includeNarrative,
     })
 
-    return NextResponse.json(summary, { status: 200 })
+    // Transform to match WeeklySummaryResponse format expected by frontend
+    const response = {
+      startDate: summary.weekStart.toISOString(),
+      endDate: summary.weekEnd.toISOString(),
+      totalMeetings: summary.stats.totalMeetings,
+      totalTimeMinutes: summary.stats.totalTimeMinutes,
+      uniquePeople: summary.stats.uniquePeopleCount,
+      averageDurationMinutes: summary.stats.averageMeetingDurationMinutes,
+      categoryBreakdown: summary.stats.categoryBreakdown,
+      relationshipMetrics: summary.relationships.map((rel) => ({
+        personId: rel.personId,
+        personName: rel.personName,
+        meetingCount: rel.interactionCount,
+        totalTimeMinutes: rel.totalTimeMinutes,
+        lastInteraction: rel.lastInteractionDate?.toISOString(),
+      })),
+      insights: (summary.insights?.patterns || []).map((pattern) => ({
+        type: 'pattern',
+        message: pattern,
+      })),
+      shortInsights: summary.insights?.shortInsights || [],
+      narrative: undefined, // No longer used
+    }
+
+    return NextResponse.json(response, { status: 200 })
   } catch (error: any) {
     console.error('Error generating weekly summary:', error)
     return NextResponse.json(

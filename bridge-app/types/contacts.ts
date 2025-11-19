@@ -13,6 +13,11 @@ export interface Contact {
   phones: string[]
   notes?: string
   organization?: string
+  jobTitle?: string
+  addresses?: Array<{ type: 'home' | 'work' | 'other'; value: string }>
+  urls?: Array<{ type: string; value: string }>
+  birthday?: Date
+  photo?: string
   rawData?: Record<string, any>
 }
 

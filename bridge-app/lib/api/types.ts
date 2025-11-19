@@ -87,7 +87,8 @@ export interface WeeklySummaryResponse {
     type: string
     message: string
   }>
-  narrative?: string
+  shortInsights?: string[]
+  narrative?: string // Deprecated, no longer used
 }
 
 /**

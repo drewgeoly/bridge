@@ -8,13 +8,16 @@ import { InteractionLogger } from './InteractionLogger'
 import { AdvicePage } from './AdvicePage'
 import { SettingsPage } from './SettingsPage'
 import { LoginPage } from './LoginPage'
+import { ContactsPage } from './contacts/ContactsPage'
+import { ContactDetailView } from './contacts/ContactDetailView'
 import { apiGet, API_ENDPOINTS } from '@/lib/api/client'
 import type { GetProfileResponse } from '@/lib/api/types'
 
-type Page = 'home' | 'logger' | 'advice' | 'settings'
+type Page = 'home' | 'logger' | 'advice' | 'settings' | 'contacts'
 
 export function AppRouter() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isCheckingNewUser, setIsCheckingNewUser] = useState(false)
   const router = useRouter()
@@ -60,6 +63,17 @@ export function AppRouter() {
 
   const handleNavigate = (page: Page) => {
     setCurrentPage(page)
+    if (page !== 'contacts') {
+      setSelectedContactId(null)
+    }
+  }
+
+  const handleContactSelect = (contactId: string) => {
+    setSelectedContactId(contactId)
+  }
+
+  const handleContactBack = () => {
+    setSelectedContactId(null)
   }
 
   const handleLogin = () => {
@@ -102,6 +116,21 @@ export function AppRouter() {
           onBack={() => handleNavigate('home')}
           onNavigate={handleNavigate}
         />
+      )}
+      {currentPage === 'contacts' && (
+        selectedContactId ? (
+          <ContactDetailView
+            contactId={selectedContactId}
+            onBack={handleContactBack}
+            onNavigate={handleNavigate}
+          />
+        ) : (
+          <ContactsPage
+            onBack={() => handleNavigate('home')}
+            onNavigate={handleNavigate}
+            onContactSelect={handleContactSelect}
+          />
+        )
       )}
     </div>
   )
